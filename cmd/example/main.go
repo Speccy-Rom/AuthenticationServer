@@ -76,4 +76,34 @@ func authorize(username, password string) (string, error) {
 	return resp.Token, nil
 }
 
+func request(req *userRequest, res *response, endpoint string) error {
+	reqBodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
 
+	resp, err := http.Post(
+		endpoint,
+		"application/json",
+		bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(body, res); err != nil {
+		return err
+	}
+
+	if res.Status == "error" {
+		return errors.New(fmt.Sprintf("error occured on user creation: %s", res.Message))
+	}
+
+	return nil
+}
